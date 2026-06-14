@@ -4,6 +4,9 @@ import com.iyzipay.HashValidator;
 import com.iyzipay.HttpClient;
 import com.iyzipay.Options;
 import com.iyzipay.ResponseSignatureGenerator;
+import com.iyzipay.idempotency.IdempotencyAction;
+import com.iyzipay.idempotency.IdempotencyKey;
+import com.iyzipay.idempotency.IdempotencyManager;
 import com.iyzipay.request.CreatePaymentRequest;
 import com.iyzipay.request.RetrievePaymentRequest;
 
@@ -25,6 +28,21 @@ public class Payment extends PaymentResource implements ResponseSignatureGenerat
                 getHttpHeadersV2(path, request, options),
                 request,
                 Payment.class);
+    }
+
+    public static Payment create(CreatePaymentRequest request, Options options, String idempotencyKey) {
+        IdempotencyKey key = IdempotencyKey.of(idempotencyKey);
+        return IdempotencyManager.getInstance().execute(key, request, new IdempotencyAction<Payment>() {
+            @Override
+            public Payment execute() {
+                String path = "/payment/auth";
+                return HttpClient.create().post(options.getBaseUrl() + path,
+                        getHttpProxy(options),
+                        getHttpHeadersV2(path, request, options, idempotencyKey),
+                        request,
+                        Payment.class);
+            }
+        });
     }
 
     public static Payment retrieve(RetrievePaymentRequest request, Options options) {

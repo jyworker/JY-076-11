@@ -20,6 +20,7 @@ public class IyzipayResource {
     private static final String IYZIWS_V2_HEADER_NAME = "IYZWSv2 ";
     private static final String CLIENT_VERSION = IyzipayResource.class.getPackage().getImplementationVersion();
     private static final String CLIENT_TITLE = IyzipayResource.class.getPackage().getImplementationTitle();
+    private static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
 
     private String status;
     private String errorCode;
@@ -33,11 +34,18 @@ public class IyzipayResource {
     }
 
     protected static Map<String, String> getHttpHeadersV2(String path, Request request, Options options) {
+        return getHttpHeadersV2(path, request, options, null);
+    }
+
+    protected static Map<String, String> getHttpHeadersV2(String path, Request request, Options options, String idempotencyKey) {
         Map<String, String> headers = new HashMap<String, String>();
 
         String randomString = UUID.randomUUID().toString();
         headers.put(AUTHORIZATION, prepareAuthorizationStringV2(path, request, randomString, options));
         putClientVersionHeader(headers);
+        if (idempotencyKey != null && !idempotencyKey.isEmpty()) {
+            headers.put(IDEMPOTENCY_KEY_HEADER, idempotencyKey);
+        }
         return headers;
     }
 
